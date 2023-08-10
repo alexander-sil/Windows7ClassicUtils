@@ -1,0 +1,2887 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "API для интеграции сервиса Яндекс.Еда",
+    "description": "Описание API для работы с сервисом Яндекс.Еда по моделям \"Доставка Яндекс Едой\",  \"Доставка партнером\" и \"Самовывоз\". Все методы описанные ниже должны быть реализованы на стороне партнера в процессе интеграции. Т.е. сервис Яндекс.Еда выступает в роли клиента, а Вам необходимо реализовать серверную часть. Взаимодействие происходит на основании pull-модели, т.е. сервис Яндекс Еда как клиент запрашивает данные либо может создавать/обновлять данные если это необходимо.\n\n# Authentication\n\n<!-- ReDoc-Inject: <security-definitions> -->",
+    "version": "1.0-oas3",
+    "x-logo": {
+      "url": "public/logo.svg",
+      "altText": "Yandex.Eda logo"
+    }
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "Аутентификация в системе"
+    },
+    {
+      "name": "Nomenclature",
+      "description": "Информация о товарах, ценах, остатках, доступности"
+    },
+    {
+      "name": "Orders",
+      "description": "Создание и обновление заказов"
+    }
+  ],
+  "security": [
+    {
+      "OAuth2": [
+        "read",
+        "write"
+      ]
+    }
+  ],
+  "paths": {
+    "/security/oauth/token": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Аутентификация в системе",
+        "description": "Авторизация для всех методов используется одинаковая. Партнер реализует в своей системе авторизацию формата OAuth2.0. Для получения токена партнер передает host, client_id и client_secret сотрудникам Яндекса. Полученные данные используются для получения токена в запросе  POST /security/oauth/token. Далее с полученным токеном Яндекс выполняет все запросы: получение товаров и остатков, работа с заказами и другие. Токен запрашивается перед каждым запросом. Данные значения заполняются Яндексом всегда одинаково grant_type = client_credentials, scope = read write и передаются в теле c application/x-www-form-urlencoded. Далее токен передается в заголовке каждого запроса как Authorization : Bearer token",
+        "operationId": "partner.auth.post",
+        "security": [],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthenticationRequest_v1"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Успешная аутентификация",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка в запросе, в ответе список ошибок",
+            "content": {
+              "application/vnd.eda.picker.errors.v1+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList_v1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренние ошибки сервера, в ответе список ошибок",
+            "content": {
+              "application/vnd.eda.picker.errors.v1+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList_v1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/nomenclature/{placeId}/composition": {
+      "get": {
+        "security": [
+          {
+            "OAuth2": [
+              "read"
+            ]
+          }
+        ],
+        "tags": [
+          "Nomenclature"
+        ],
+        "summary": "Актуальная информация о товарах",
+        "operationId": "partner.nomenclature.composition.get",
+        "parameters": [
+          {
+            "name": "placeId",
+            "in": "path",
+            "description": "Уникальный идентификатор магазина в системе партнера",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Актуальная номенклатура",
+            "content": {
+              "application/vnd.eda.picker.nomenclature.v1+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Nomenclature"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка в запросе, в ответе список ошибок",
+            "content": {
+              "application/vnd.eda.picker.errors.v1+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList_v1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не пройдена авторизация, в ответе список ошибок",
+            "content": {
+              "application/vnd.eda.picker.errors.v1+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList_v1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Не найден ресурс, в ответе список ошибок",
+            "content": {
+              "application/vnd.eda.picker.errors.v1+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList_v1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренние ошибки сервера, в ответе список ошибок",
+            "content": {
+              "application/vnd.eda.picker.errors.v1+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList_v1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/nomenclature/{placeId}/availability": {
+      "get": {
+        "tags": [
+          "Nomenclature"
+        ],
+        "summary": "Актуальная информация об остатках товаров",
+        "description": "Перечисленным товарам обновляются остатки значением из поля stock. В зависимости от значения поля также обновляется и доступность товара. Если <=0 - товар становится недоступным для заказа, если >0 - доступным для заказа. Отсутствующие в списке товары будут доступными для заказа с последним положительным количеством полученным от партнера. Чтобы отсутствующие в списке товары были недоступны для заказа - надо это согласовать с вашим менеджером Яндекса.",
+        "operationId": "partner.nomenclature.availability.get",
+        "parameters": [
+          {
+            "name": "placeId",
+            "in": "path",
+            "description": "Уникальный идентификатор магазина в системе партнёра",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список товаров с актуальными остатками товаров. Чтобы отсутствующие в списке товары были недоступны для заказа - надо это согласовать с сотрудниками Яндекса. По умолчанию остатки не изменяются, если партнер не передал по ним новое значение.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Availability"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка в запросе, в ответе список ошибок",
+            "content": {
+              "application/vnd.eda.picker.errors.v1+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList_v1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не пройдена авторизация, в ответе список ошибок",
+            "content": {
+              "application/vnd.eda.picker.errors.v1+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList_v1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Не пройдена авторизация, в ответе список ошибок",
+            "content": {
+              "application/vnd.eda.picker.errors.v1+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList_v1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Не пройдена авторизация, в ответе список ошибок",
+            "content": {
+              "application/vnd.eda.picker.errors.v1+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList_v1"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2": [
+              "read",
+              "write"
+            ]
+          }
+        ]
+      }
+    },
+    "/order": {
+      "post": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Создание заказа в системе партнера",
+        "description": "YandexOrder - схема заказа при доставке курьерами Яндекс Еды. MarketplaceOrder - схема заказа при доставке силами курьеров партнера.  PickupOrder - схема заказа при самовывозе. Актуальная версия модели запроса - application/vnd.eats.order.v2+json",
+        "operationId": "partner.order.create",
+        "requestBody": {
+          "content": {
+            "application/vnd.eats.order.v2+json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/YandexOrderCreate"
+                  },
+                  {
+                    "$ref": "#/components/schemas/MarketplaceOrderCreate"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PickupOrderV1"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "discriminator",
+                  "mapping": {
+                    "yandex": "#/components/schemas/YandexOrderCreate",
+                    "marketplace": "#/components/schemas/MarketplaceOrderCreate",
+                    "pickup": "#/components/schemas/PickupOrderV1"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Заказ успешно создан в системе партнера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "string",
+                      "example": "OK"
+                    },
+                    "orderId": {
+                      "type": "string",
+                      "description": "Идентификатор созданного заказа в системе партнера. Формат свободный. Рекомендуется UUID4",
+                      "example": "03d3b69b-331c-4f84-b2c4-888b30320e63"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка в запросе, в ответе список ошибок",
+            "content": {
+              "application/vnd.eda.picker.errors.v1+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList_v1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не пройдена авторизация, в ответе список ошибок",
+            "content": {
+              "application/vnd.eda.picker.errors.v1+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList_v1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренние ошибки сервера, в ответе список ошибок",
+            "content": {
+              "application/vnd.eda.picker.errors.v1+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList_v1"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2": [
+              "read",
+              "write"
+            ]
+          }
+        ]
+      }
+    },
+    "/order/{orderId}": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Получение актуальной информации о заказе в системе партнера",
+        "description": "Не забудьте указать корректную версию content-type - application/vnd.eats.order.v2+json",
+        "operationId": "partner.order.get",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "description": "Идентификатор заказа в системе партнера",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Информация о заказе успешно передана",
+            "content": {
+              "application/vnd.eats.order.v2+json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/YandexOrderUpdate"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MarketplaceOrderUpdate"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PickupOrderV1"
+                    }
+                  ],
+                  "discriminator": {
+                    "propertyName": "discriminator",
+                    "mapping": {
+                      "yandex": "#/components/schemas/YandexOrderUpdate",
+                      "marketplace": "#/components/schemas/MarketplaceOrderUpdate",
+                      "pickup": "#/components/schemas/PickupOrderV1"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request. Ошибка в параметрах, в ответе список ошибок валидации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не пройдена авторизация - истек токен, либо не был передан в запросе",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationRequiredResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Заказ не найден в системе",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренние ошибки сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2": [
+              "read",
+              "write"
+            ]
+          }
+        ]
+      }
+    },
+    "/order/{orderId}/status": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Получение актуального статуса заказа в системе партнера",
+        "operationId": "partner.order.status",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "description": "Идентификатор заказа в системе партнера",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Статус заказа успешно выдан",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request. Ошибка в параметрах, в ответе список ошибок валидации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не пройдена авторизация - истек токен, либо не был передан в запросе",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationRequiredResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Заказ не найден в системе",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренние ошибки сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2": [
+              "read",
+              "write"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Обновление статуса заказа в системе партнера по инициативе Яндекс Еды. Для использования данного метода нужно согласовать это с сотрудниками Яндекса.",
+        "operationId": "partner.order.status.put",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "description": "Идентификатор заказа в системе партнера",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/vnd.eats.order.status.v1+json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderStatus"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Статус заказа успешно обновлён"
+          },
+          "400": {
+            "description": "Bad request. Ошибка в параметрах, в ответе список ошибок валидации",
+            "headers": {
+              "Cache-Control": {
+                "$ref": "#/components/headers/Cache-Control"
+              },
+              "Expires": {
+                "$ref": "#/components/headers/Expires"
+              },
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              },
+              "Vary": {
+                "$ref": "#/components/headers/Vary"
+              },
+              "Pragma": {
+                "$ref": "#/components/headers/Pragma"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не пройдена авторизация - истек токен, либо не был передан в запросе",
+            "headers": {
+              "Cache-Control": {
+                "$ref": "#/components/headers/Cache-Control"
+              },
+              "Expires": {
+                "$ref": "#/components/headers/Expires"
+              },
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              },
+              "Vary": {
+                "$ref": "#/components/headers/Vary"
+              },
+              "Pragma": {
+                "$ref": "#/components/headers/Pragma"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationRequiredResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Заказ не найден в системе",
+            "headers": {
+              "Cache-Control": {
+                "$ref": "#/components/headers/Cache-Control"
+              },
+              "Expires": {
+                "$ref": "#/components/headers/Expires"
+              },
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              },
+              "Vary": {
+                "$ref": "#/components/headers/Vary"
+              },
+              "Pragma": {
+                "$ref": "#/components/headers/Pragma"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренние ошибки сервера",
+            "headers": {
+              "Cache-Control": {
+                "$ref": "#/components/headers/Cache-Control"
+              },
+              "Expires": {
+                "$ref": "#/components/headers/Expires"
+              },
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              },
+              "Vary": {
+                "$ref": "#/components/headers/Vary"
+              },
+              "Pragma": {
+                "$ref": "#/components/headers/Pragma"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2": [
+              "read",
+              "write"
+            ]
+          }
+        ]
+      }
+    },
+    "/places/nearest_delivery_times": {
+      "post": {
+        "tags": [
+          "Slots"
+        ],
+        "summary": "Слоты для использования на Главной для отображения ближайшего времени доставки",
+        "operationId": "partner.nearest.slots.get",
+        "security": [
+          {
+            "OAuth2": [
+              "read"
+            ]
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NearestSlots"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Усредненные слоты",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NearestSlotsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка в запросе, в ответе список ошибок",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не пройдена авторизация, в ответе список ошибок",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Не найден ресурс, в ответе список ошибок",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренние ошибки сервера, в ответе список ошибок",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/places/{placeId}/delivery_times": {
+      "post": {
+        "tags": [
+          "Slots"
+        ],
+        "summary": "Слоты для использования в Корзине при оформлении заказа",
+        "operationId": "partner.slots.get",
+        "security": [
+          {
+            "OAuth2": [
+              "read"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "placeId",
+            "in": "path",
+            "description": "Внутренний уникальный идентификатор магазина в системе партнёра.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SlotsCheckout"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Успешный запрос слотов",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlotsCheckoutResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка в запросе, в ответе список ошибок",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не пройдена авторизация, в ответе список ошибок",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Не найден ресурс, в ответе список ошибок",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренние ошибки сервера, в ответе список ошибок",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorList"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "OAuth2": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "/security/oauth/token",
+            "scopes": {
+              "read": "Доступ на чтение",
+              "write": "Доступ на запись"
+            }
+          }
+        },
+        "description": "Партнер у себя дожен реализовать OAuth2 авторизацию. Минимальные требования: должен быть доступен метод для получения токена с client_id, client_secret, grand_type и scopes. Urls приведен ниже. Ссылка на полную спецификацию OAuth2 - https://tools.ietf.org/html/rfc6749"
+      }
+    },
+    "schemas": {
+      "AuthenticationRequest_v1": {
+        "type": "object",
+        "required": [
+          "client_id",
+          "client_secret",
+          "grant_type",
+          "scope"
+        ],
+        "properties": {
+          "client_id": {
+            "type": "string",
+            "example": "987"
+          },
+          "client_secret": {
+            "type": "string",
+            "example": "g8bKdBiIR9MutCObuexDm7nsgkaXU"
+          },
+          "grant_type": {
+            "type": "string",
+            "example": "client_credentials"
+          },
+          "scope": {
+            "type": "string",
+            "example": "read write"
+          }
+        }
+      },
+      "AuthenticationResponse": {
+        "description": "Единственное обязательное поле - access_token.",
+        "type": "object",
+        "properties": {
+          "access_token": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "access_token"
+        ],
+        "example": {
+          "access_token": "CObuexDm7nsgkaXUg8bKdBiIR9Mut"
+        }
+      },
+      "YandexOrderCreate": {
+        "type": "object",
+        "description": "Информация о заказе с доставкой курьерами Яндекс Еды - \"yandex\"",
+        "properties": {
+          "platform": {
+            "type": "string",
+            "enum": [
+              "YE",
+              "DC"
+            ],
+            "description": "Идентификатор платформы, DC - Delivery Club, YE - Yandex Eda",
+            "example": "YE"
+          },
+          "discriminator": {
+            "type": "string",
+            "description": "Дискриминатор схемы. Для заказов с доставкой курьерами Яндекс Еды равен \"yandex\".",
+            "example": "yandex"
+          },
+          "eatsId": {
+            "type": "string",
+            "description": "Сквозной идентификатор заказа на стороне Яндекс Еды в формате DDDDDD-DDDDDDD",
+            "example": "230130-1234567"
+          },
+          "restaurantId": {
+            "type": "string",
+            "description": "Внутренний уникальный идентификатор магазина в системе партнёра. Формат свободный, рекомендуется UUID4",
+            "example": "937c57f6-4508-4858-be7f-20691a16fbb0"
+          },
+          "deliveryInfo": {
+            "description": "Информация о доставке",
+            "type": "object",
+            "properties": {
+              "clientName": {
+                "type": "string",
+                "description": "Имя клиента в сервисе Яндекс Еда",
+                "example": "Иванов Иван Иванович"
+              },
+              "phoneNumber": {
+                "type": "string",
+                "description": "Номер телефона для связи с клиентом в международном формате. Состоит из частей \\\"+<код страны><номер>\\\". Может содержать добавочный номер: \\\"+<код страны><номер> доб. <добавочный номер>\\\"",
+                "example": "+74732006745 доб. 12099"
+              },
+              "courierArrivementDate": {
+                "type": "string",
+                "description": "Дата, когда придет курьер в торговую точку, в формате RFC3339 с дробной частью секунд (Y-m-d\\\\TH:i:s.uP). Обязательно добавляйте дробную часть секунд.",
+                "format": "date-time",
+                "example": "1970-01-01T00:00:27.870000+00:20"
+              }
+            },
+            "required": [
+              "courierArrivementDate"
+            ]
+          },
+          "paymentInfo": {
+            "type": "object",
+            "properties": {
+              "itemsCost": {
+                "type": "number",
+                "format": "double",
+                "example": 1570,
+                "description": "Полная стоимость товаров в заказе"
+              },
+              "paymentType": {
+                "type": "string",
+                "description": "Информация о типе оплаты. CARD - это оплаченный заказ клиентом на стороне Яндекс Еды, CASH - это неоплаченный заказ (используется в основном при самовывозе алкоголя).",
+                "enum": [
+                  "CARD",
+                  "CASH"
+                ]
+              }
+            },
+            "required": [
+              "itemsCost",
+              "paymentType"
+            ]
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Внутренний уникальный идентификатор товара в системе партнера",
+                  "example": "some-uniq-identifier"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Наименование товара",
+                  "example": "Молоко Домик в деревне"
+                },
+                "quantity": {
+                  "type": "number",
+                  "format": "float",
+                  "description": "Количество товара в заказе. Для весовых товаров количество передается в кг (3.4).",
+                  "example": 3
+                },
+                "price": {
+                  "type": "number",
+                  "format": "double",
+                  "description": "Цена одной штуки товара. Для весовых товаров цена передается за 1 кг",
+                  "example": 84
+                },
+                "modifications": {
+                  "type": "array",
+                  "description": "Параметр не поддерживается в интеграции магазинов и  передается пустым",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "Внутренний уникальный идентификатор модификатора в системе партнера",
+                        "example": "937c57f6-4508-4858-be7f-20691a16fbb0"
+                      },
+                      "name": {
+                        "type": "string",
+                        "description": "Наименование модификатора",
+                        "example": "Нарезать"
+                      },
+                      "quantity": {
+                        "type": "integer",
+                        "description": "Количество в заказе",
+                        "example": 1
+                      },
+                      "price": {
+                        "type": "number",
+                        "format": "double",
+                        "description": "Цена модификатора",
+                        "example": 39
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "price",
+                      "quantity"
+                    ]
+                  }
+                },
+                "promos": {
+                  "type": "array",
+                  "description": "Параметр не поддерживается в интеграции магазинов и  передается пустым",
+                  "items": {
+                    "$ref": "#/components/schemas/YandexOrderCreate/properties/promos/items"
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "modifications",
+                "price",
+                "quantity",
+                "promos"
+              ]
+            }
+          },
+          "persons": {
+            "type": "integer",
+            "description": "Параметр не поддерживается в интеграции магазинов и  передается пустым",
+            "example": 0
+          },
+          "comment": {
+            "type": "string",
+            "description": "Дополнительная информация о заказе",
+            "example": "Дополнительная информация о заказе: ..."
+          },
+          "promos": {
+            "type": "array",
+            "description": "Параметр не поддерживается в интеграции магазинов и передается пустым",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "description": "Параметр не поддерживается в интеграции магазинов и  передается пустым",
+                  "enum": [
+                    "GIFT",
+                    "PERCENTAGE",
+                    "FIXED"
+                  ],
+                  "example": "FIXED"
+                },
+                "discount": {
+                  "type": "number",
+                  "example": 0,
+                  "description": "Сума скидки в валюте"
+                }
+              },
+              "required": [
+                "type",
+                "discount"
+              ]
+            }
+          }
+        },
+        "required": [
+          "discriminator",
+          "comment",
+          "nativeOrderDelivery",
+          "eatsId",
+          "items",
+          "nativeOrderPayment",
+          "promos",
+          "deliveryInfo",
+          "paymentInfo"
+        ]
+      },
+      "YandexOrderUpdate": {
+        "type": "object",
+        "description": "Информация о заказе с доставкой курьерами Яндекс Еды - \"yandex\"",
+        "properties": {
+          "platform": {
+            "type": "string",
+            "enum": [
+              "YE",
+              "DC"
+            ],
+            "description": "Идентификатор платформы, DC - Delivery Club, YE - Yandex Eda",
+            "example": "YE"
+          },
+          "discriminator": {
+            "type": "string",
+            "description": "Дискриминатор схемы. Для заказов с доставкой курьерами Яндекс Еды равен \"yandex\".",
+            "example": "yandex"
+          },
+          "eatsId": {
+            "type": "string",
+            "description": "Сквозной идентификатор заказа на стороне Яндекс Еды в формате DDDDDD-DDDDDDD",
+            "example": "230130-1234567"
+          },
+          "restaurantId": {
+            "type": "string",
+            "description": "Внутренний уникальный идентификатор магазина в системе партнёра. Формат свободный, рекомендуется UUID4",
+            "example": "937c57f6-4508-4858-be7f-20691a16fbb0"
+          },
+          "deliveryInfo": {
+            "description": "Информация о доставке",
+            "type": "object",
+            "properties": {
+              "clientName": {
+                "type": "string",
+                "description": "Имя клиента в сервисе Яндекс Еда",
+                "example": "Иванов Иван Иванович"
+              },
+              "phoneNumber": {
+                "type": "string",
+                "description": "Номер телефона для связи с клиентом в международном формате. Состоит из частей \\\"+<код страны><номер>\\\". Может содержать добавочный номер: \\\"+<код страны><номер> доб. <добавочный номер>\\\"",
+                "example": "+74732006745 доб. 12099"
+              },
+              "courierArrivementDate": {
+                "type": "string",
+                "description": "Дата, когда придет курьер в торговую точку, в формате RFC3339 с дробной частью секунд (Y-m-d\\\\TH:i:s.uP). Обязательно добавляйте дробную часть секунд.",
+                "format": "date-time",
+                "example": "1970-01-01T00:00:27.870000+00:20"
+              }
+            },
+            "required": [
+              "courierArrivementDate"
+            ]
+          },
+          "paymentInfo": {
+            "type": "object",
+            "properties": {
+              "itemsCost": {
+                "type": "number",
+                "format": "double",
+                "example": 1570,
+                "description": "Полная стоимость товаров в заказе"
+              },
+              "paymentType": {
+                "type": "string",
+                "description": "Информация о типе оплаты. CARD - это оплаченный заказ клиентом на стороне Яндекс Еды, CASH - это неоплаченный заказ (используется в основном при самовывозе алкоголя).",
+                "enum": [
+                  "CARD",
+                  "CASH"
+                ]
+              }
+            },
+            "required": [
+              "itemsCost",
+              "paymentType"
+            ]
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Внутренний уникальный идентификатор товара в системе партнера",
+                  "example": "some-uniq-identifier"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Наименование товара",
+                  "example": "Молоко Домик в деревне"
+                },
+                "quantity": {
+                  "type": "number",
+                  "format": "float",
+                  "description": "Количество товара в заказе. Для весовых товаров количество передается в кг (3.4).",
+                  "example": 3
+                },
+                "price": {
+                  "type": "number",
+                  "format": "double",
+                  "description": "Цена одной штуки товара. Для весовых товаров цена передается за 1 кг",
+                  "example": 84
+                },
+                "marking": {
+                  "type": "array",
+                  "description": "Объект с информацией о маркировке товара",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "datamatrix": {
+                        "type": "string",
+                        "description": "Маркировка в виде строки"
+                      },
+                      "quantity": {
+                        "type": "number",
+                        "example": 0.5,
+                        "description": "Вес товарной единицы"
+                      }
+                    },
+                    "required": [
+                      "datamatrix"
+                    ]
+                  }
+                },
+                "modifications": {
+                  "type": "array",
+                  "description": "Параметр не поддерживается в интеграции магазинов и  передается пустым",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "Внутренний уникальный идентификатор модификатора в системе партнера",
+                        "example": "937c57f6-4508-4858-be7f-20691a16fbb0"
+                      },
+                      "name": {
+                        "type": "string",
+                        "description": "Наименование модификатора",
+                        "example": "Нарезать"
+                      },
+                      "quantity": {
+                        "type": "integer",
+                        "description": "Количество в заказе",
+                        "example": 1
+                      },
+                      "price": {
+                        "type": "number",
+                        "format": "double",
+                        "description": "Цена модификатора",
+                        "example": 39
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "price",
+                      "quantity"
+                    ]
+                  }
+                },
+                "promos": {
+                  "type": "array",
+                  "description": "Параметр не поддерживается в интеграции магазинов и  передается пустым",
+                  "items": {
+                    "$ref": "#/components/schemas/YandexOrderUpdate/properties/promos/items"
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "modifications",
+                "price",
+                "quantity",
+                "promos"
+              ]
+            }
+          },
+          "persons": {
+            "type": "integer",
+            "description": "Параметр не поддерживается в интеграции магазинов и  передается пустым",
+            "example": 0
+          },
+          "comment": {
+            "type": "string",
+            "description": "Дополнительная информация о заказе",
+            "example": "Дополнительная информация о заказе: ..."
+          },
+          "promos": {
+            "type": "array",
+            "description": "Параметр не поддерживается в интеграции магазинов и передается пустым",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "description": "Параметр не поддерживается в интеграции магазинов и  передается пустым",
+                  "enum": [
+                    "GIFT",
+                    "PERCENTAGE",
+                    "FIXED"
+                  ],
+                  "example": "FIXED"
+                },
+                "discount": {
+                  "type": "number",
+                  "example": 0,
+                  "description": "Сума скидки в валюте"
+                }
+              },
+              "required": [
+                "type",
+                "discount"
+              ]
+            }
+          }
+        },
+        "required": [
+          "discriminator",
+          "comment",
+          "nativeOrderDelivery",
+          "eatsId",
+          "items",
+          "nativeOrderPayment",
+          "promos",
+          "deliveryInfo",
+          "paymentInfo"
+        ]
+      },
+      "MarketplaceOrderCreate": {
+        "type": "object",
+        "description": "Информация о заказе с доставкой курьерами партнера -  \"marketplace\"",
+        "properties": {
+          "platform": {
+            "type": "string",
+            "enum": [
+              "YE",
+              "DC"
+            ],
+            "description": "Идентификатор платформы, DC - Delivery Club, YE - Yandex Eda",
+            "example": "YE"
+          },
+          "discriminator": {
+            "type": "string",
+            "description": "Дискриминатор схемы. Для заказов с доставкой курьерами партнера равен \"marketplace\"",
+            "example": "marketplace"
+          },
+          "eatsId": {
+            "type": "string",
+            "description": "Сквозной идентификатор заказа на стороне Яндекс Еды в формате DDDDDD-DDDDDDD",
+            "example": "230130-1234567"
+          },
+          "restaurantId": {
+            "type": "string",
+            "description": "Внутренний уникальный идентификатор магазина в системе партнёра. Формат свободный, рекомендуется UUID4",
+            "example": "937c57f6-4508-4858-be7f-20691a16fbb0"
+          },
+          "deliveryInfo": {
+            "description": "Информация о доставке",
+            "type": "object",
+            "properties": {
+              "clientName": {
+                "type": "string",
+                "description": "Имя клиента в сервисе Яндекс Еда",
+                "example": "Иванов Иван Иванович"
+              },
+              "phoneNumber": {
+                "type": "string",
+                "description": "Номер телефона для связи с клиентом в международном формате. Состоит из частей \\\"+<код страны><номер>\\\". Может содержать добавочный номер: \\\"+<код страны><номер> доб. <добавочный номер>\\\"",
+                "example": "+74732006745 доб. 12099"
+              },
+              "deliveryDate": {
+                "type": "string",
+                "description": "Дата доставки (к которой клиент ожидает доставку заказа), в формате RFC3339 с дробной частью секунд (Y-m-d\\\\TH:i:s.uP)",
+                "format": "date-time",
+                "example": "1970-01-01T00:00:27.870000+00:20"
+              },
+              "deliverySlot": {
+                "description": "Информация о слоте доставки",
+                "type": "object",
+                "properties": {
+                  "slot_id": {
+                    "type": "string",
+                    "description": "Id слота"
+                  },
+                  "from": {
+                    "type": "string",
+                    "description": "Начало слота доставки",
+                    "format": "date-time",
+                    "example": "1970-01-01T00:00:27.870000+00:20"
+                  },
+                  "to": {
+                    "type": "string",
+                    "description": "Конец слота доставки",
+                    "format": "date-time",
+                    "example": "1970-01-01T00:00:27.870000+00:20"
+                  }
+                },
+                "required": [
+                  "from",
+                  "to"
+                ]
+              },
+              "deliveryAddress": {
+                "description": "Информация об адресе доставки",
+                "type": "object",
+                "properties": {
+                  "full": {
+                    "type": "string",
+                    "description": "Полный адрес",
+                    "example": "Москва, улица Тверская, дом 1 строение 4, подъезд 2. 4-й этаж, код домофона: 123 К 4567"
+                  },
+                  "latitude": {
+                    "type": "string",
+                    "description": "Широта точки доставки",
+                    "example": "55.756994"
+                  },
+                  "longitude": {
+                    "type": "string",
+                    "description": "Долгота точки доставки",
+                    "example": "37.614006"
+                  }
+                },
+                "required": [
+                  "full",
+                  "latitude",
+                  "longitude"
+                ]
+              }
+            },
+            "required": [
+              "clientName",
+              "deliveryAddress",
+              "deliveryDate",
+              "phoneNumber",
+              "type"
+            ]
+          },
+          "paymentInfo": {
+            "type": "object",
+            "properties": {
+              "paymentType": {
+                "type": "string",
+                "description": "Информация о типе оплаты",
+                "enum": [
+                  "CARD",
+                  "CASH"
+                ]
+              },
+              "itemsCost": {
+                "type": "number",
+                "format": "double",
+                "example": 1570,
+                "description": "Полная сумма стоимости товаров в заказе"
+              },
+              "deliveryFee": {
+                "type": "number",
+                "format": "double",
+                "example": 179,
+                "description": "Стоимость доставки"
+              },
+              "total": {
+                "type": "number",
+                "format": "double",
+                "example": 1749,
+                "description": "Общая стоимость заказа"
+              },
+              "change": {
+                "type": "number",
+                "format": "double",
+                "example": 0,
+                "description": "Сумма, с которой потребуется сдача. Другими словами, это сумма которой клиент планирует расплатиться. Обычно оплата клиентом происходит картой на стороне Яндекса и партнерам данное поле передается пустым."
+              }
+            },
+            "required": [
+              "change",
+              "deliveryFee",
+              "itemsCost",
+              "paymentType"
+            ]
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Внутренний уникальный идентификатор товара в системе партнера",
+                  "example": "some-uniq-identifier"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Наименование товара",
+                  "example": "Молоко Домик в деревне"
+                },
+                "quantity": {
+                  "type": "number",
+                  "format": "float",
+                  "description": "Количество товара в заказе. Для весовых товаров количество передается в кг (3.4).",
+                  "example": 3
+                },
+                "price": {
+                  "type": "number",
+                  "format": "double",
+                  "description": "Цена одной штуки товара. Для весовых товаров цена передается за 1 кг",
+                  "example": 84
+                },
+                "modifications": {
+                  "type": "array",
+                  "description": "Параметр не поддерживается в интеграции магазинов и передается пустым",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "Внутренний уникальный идентификатор модификатора в системе партнера",
+                        "example": "937c57f6-4508-4858-be7f-20691a16fbb0"
+                      },
+                      "name": {
+                        "type": "string",
+                        "description": "Наименование модификатора",
+                        "example": "Нарезать"
+                      },
+                      "quantity": {
+                        "type": "integer",
+                        "description": "Количество в заказе",
+                        "example": 1
+                      },
+                      "price": {
+                        "type": "number",
+                        "format": "double",
+                        "description": "Цена модификатора",
+                        "example": 39
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "price",
+                      "quantity"
+                    ]
+                  }
+                },
+                "promos": {
+                  "type": "array",
+                  "description": "Параметр не поддерживается в интеграции магазинов и передается пустым",
+                  "items": {
+                    "$ref": "#/components/schemas/MarketplaceOrderCreate/properties/promos/items"
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "modifications",
+                "price",
+                "quantity",
+                "promos"
+              ]
+            }
+          },
+          "persons": {
+            "type": "integer",
+            "description": "Параметр не поддерживается в интеграции магазинов и передается пустым",
+            "example": 0
+          },
+          "comment": {
+            "type": "string",
+            "description": "Дополнительная информация о заказе",
+            "example": "Дополнительная информация о заказе: ..."
+          },
+          "promos": {
+            "type": "array",
+            "description": "Параметр не поддерживается в интеграции магазинов и передается пустым",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "description": "Параметр не поддерживается в интеграции магазинов и передается пустым",
+                  "enum": [
+                    "GIFT",
+                    "PERCENTAGE",
+                    "FIXED"
+                  ],
+                  "example": "FIXED"
+                },
+                "discount": {
+                  "type": "number",
+                  "example": 0,
+                  "description": "Сума скидки в валюте"
+                }
+              },
+              "required": [
+                "type",
+                "discount"
+              ]
+            }
+          }
+        },
+        "required": [
+          "discriminator",
+          "comment",
+          "marketplaceOrderDelivery",
+          "eatsId",
+          "items",
+          "marketplaceOrderPayment",
+          "promos",
+          "deliveryInfo",
+          "paymentInfo"
+        ]
+      },
+      "MarketplaceOrderUpdate": {
+        "type": "object",
+        "description": "Информация о заказе с доставкой курьерами партнера -  \"marketplace\"",
+        "properties": {
+          "platform": {
+            "type": "string",
+            "enum": [
+              "YE",
+              "DC"
+            ],
+            "description": "Идентификатор платформы, DC - Delivery Club, YE - Yandex Eda",
+            "example": "YE"
+          },
+          "discriminator": {
+            "type": "string",
+            "description": "Дискриминатор схемы. Для заказов с доставкой курьерами партнера равен \"marketplace\"",
+            "example": "marketplace"
+          },
+          "eatsId": {
+            "type": "string",
+            "description": "Сквозной идентификатор заказа на стороне Яндекс Еды в формате DDDDDD-DDDDDDD",
+            "example": "230130-1234567"
+          },
+          "restaurantId": {
+            "type": "string",
+            "description": "Внутренний уникальный идентификатор магазина в системе партнёра. Формат свободный, рекомендуется UUID4",
+            "example": "937c57f6-4508-4858-be7f-20691a16fbb0"
+          },
+          "deliveryInfo": {
+            "description": "Информация о доставке",
+            "type": "object",
+            "properties": {
+              "clientName": {
+                "type": "string",
+                "description": "Имя клиента в сервисе Яндекс Еда",
+                "example": "Иванов Иван Иванович"
+              },
+              "phoneNumber": {
+                "type": "string",
+                "description": "Номер телефона для связи с клиентом в международном формате. Состоит из частей \\\"+<код страны><номер>\\\". Может содержать добавочный номер: \\\"+<код страны><номер> доб. <добавочный номер>\\\"",
+                "example": "+74732006745 доб. 12099"
+              },
+              "deliveryDate": {
+                "type": "string",
+                "description": "Дата доставки (к которой клиент ожидает доставку заказа), в формате RFC3339 с дробной частью секунд (Y-m-d\\\\TH:i:s.uP)",
+                "format": "date-time",
+                "example": "1970-01-01T00:00:27.870000+00:20"
+              },
+              "deliverySlot": {
+                "description": "Информация о слоте доставки",
+                "type": "object",
+                "properties": {
+                  "slot_id": {
+                    "type": "string",
+                    "description": "Id слота"
+                  },
+                  "from": {
+                    "type": "string",
+                    "description": "Начало слота доставки",
+                    "format": "date-time",
+                    "example": "1970-01-01T00:00:27.870000+00:20"
+                  },
+                  "to": {
+                    "type": "string",
+                    "description": "Конец слота доставки",
+                    "format": "date-time",
+                    "example": "1970-01-01T00:00:27.870000+00:20"
+                  }
+                },
+                "required": [
+                  "from",
+                  "to"
+                ]
+              },
+              "deliveryAddress": {
+                "description": "Информация об адресе доставки",
+                "type": "object",
+                "properties": {
+                  "full": {
+                    "type": "string",
+                    "description": "Полный адрес",
+                    "example": "Москва, улица Тверская, дом 1 строение 4, подъезд 2. 4-й этаж, код домофона: 123 К 4567"
+                  },
+                  "latitude": {
+                    "type": "string",
+                    "description": "Широта точки доставки",
+                    "example": "55.756994"
+                  },
+                  "longitude": {
+                    "type": "string",
+                    "description": "Долгота точки доставки",
+                    "example": "37.614006"
+                  }
+                },
+                "required": [
+                  "full",
+                  "latitude",
+                  "longitude"
+                ]
+              }
+            },
+            "required": [
+              "clientName",
+              "deliveryAddress",
+              "deliveryDate",
+              "phoneNumber",
+              "type"
+            ]
+          },
+          "paymentInfo": {
+            "type": "object",
+            "properties": {
+              "paymentType": {
+                "type": "string",
+                "description": "Информация о типе оплаты",
+                "enum": [
+                  "CARD",
+                  "CASH"
+                ]
+              },
+              "itemsCost": {
+                "type": "number",
+                "format": "double",
+                "example": 1570,
+                "description": "Полная сумма стоимости товаров в заказе"
+              },
+              "deliveryFee": {
+                "type": "number",
+                "format": "double",
+                "example": 179,
+                "description": "Стоимость доставки"
+              },
+              "total": {
+                "type": "number",
+                "format": "double",
+                "example": 1749,
+                "description": "Общая стоимость заказа"
+              },
+              "change": {
+                "type": "number",
+                "format": "double",
+                "example": 0,
+                "description": "Сумма, с которой потребуется сдача. Другими словами, это сумма которой клиент планирует расплатиться. Обычно оплата клиентом происходит картой на стороне Яндекса и партнерам данное поле передается пустым."
+              }
+            },
+            "required": [
+              "change",
+              "deliveryFee",
+              "itemsCost",
+              "paymentType"
+            ]
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Внутренний уникальный идентификатор товара в системе партнера",
+                  "example": "some-uniq-identifier"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Наименование товара",
+                  "example": "Молоко Домик в деревне"
+                },
+                "quantity": {
+                  "type": "number",
+                  "format": "float",
+                  "description": "Количество товара в заказе. Для весовых товаров количество передается в кг (3.4).",
+                  "example": 3
+                },
+                "price": {
+                  "type": "number",
+                  "format": "double",
+                  "description": "Цена одной штуки товара. Для весовых товаров цена передается за 1 кг",
+                  "example": 84
+                },
+                "marking": {
+                  "type": "array",
+                  "description": "Объект с информацией о маркировке товара",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "datamatrix": {
+                        "type": "string",
+                        "description": "Маркировка в виде строки"
+                      },
+                      "quantity": {
+                        "type": "number",
+                        "example": 0.5,
+                        "description": "Вес товарной единицы"
+                      }
+                    },
+                    "required": [
+                      "datamatrix"
+                    ]
+                  }
+                },
+                "modifications": {
+                  "type": "array",
+                  "description": "Параметр не поддерживается в интеграции магазинов и передается пустым",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "Внутренний уникальный идентификатор модификатора в системе партнера",
+                        "example": "937c57f6-4508-4858-be7f-20691a16fbb0"
+                      },
+                      "name": {
+                        "type": "string",
+                        "description": "Наименование модификатора",
+                        "example": "Нарезать"
+                      },
+                      "quantity": {
+                        "type": "integer",
+                        "description": "Количество в заказе",
+                        "example": 1
+                      },
+                      "price": {
+                        "type": "number",
+                        "format": "double",
+                        "description": "Цена модификатора",
+                        "example": 39
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "price",
+                      "quantity"
+                    ]
+                  }
+                },
+                "promos": {
+                  "type": "array",
+                  "description": "Параметр не поддерживается в интеграции магазинов и передается пустым",
+                  "items": {
+                    "$ref": "#/components/schemas/MarketplaceOrderUpdate/properties/promos/items"
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "modifications",
+                "price",
+                "quantity",
+                "promos"
+              ]
+            }
+          },
+          "persons": {
+            "type": "integer",
+            "description": "Параметр не поддерживается в интеграции магазинов и передается пустым",
+            "example": 0
+          },
+          "comment": {
+            "type": "string",
+            "description": "Дополнительная информация о заказе",
+            "example": "Дополнительная информация о заказе: ..."
+          },
+          "promos": {
+            "type": "array",
+            "description": "Параметр не поддерживается в интеграции магазинов и передается пустым",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "description": "Параметр не поддерживается в интеграции магазинов и передается пустым",
+                  "enum": [
+                    "GIFT",
+                    "PERCENTAGE",
+                    "FIXED"
+                  ],
+                  "example": "FIXED"
+                },
+                "discount": {
+                  "type": "number",
+                  "example": 0,
+                  "description": "Сума скидки в валюте"
+                }
+              },
+              "required": [
+                "type",
+                "discount"
+              ]
+            }
+          }
+        },
+        "required": [
+          "discriminator",
+          "comment",
+          "marketplaceOrderDelivery",
+          "eatsId",
+          "items",
+          "marketplaceOrderPayment",
+          "promos",
+          "deliveryInfo",
+          "paymentInfo"
+        ]
+      },
+      "PickupOrderV1": {
+        "type": "object",
+        "description": "Информация о заказе с самовывозом - \"pickup\"",
+        "properties": {
+          "platform": {
+            "type": "string",
+            "enum": [
+              "YE",
+              "DC"
+            ],
+            "description": "Идентификатор платформы, DC - Delivery Club, YE - Yandex Eda",
+            "example": "YE"
+          },
+          "discriminator": {
+            "type": "string",
+            "description": "Дискриминатор схемы. Для заказов с самовывозом равен \"pickup\"",
+            "example": "pickup"
+          },
+          "eatsId": {
+            "type": "string",
+            "description": "Сквозной идентификатор заказа на стороне Яндекс Еды в формате DDDDDD-DDDDDDD",
+            "example": "230130-1234567"
+          },
+          "restaurantId": {
+            "type": "string",
+            "description": "Внутренний уникальный идентификатор магазина в системе партнёра. Формат свободный, рекомендуется UUID4",
+            "example": "937c57f6-4508-4858-be7f-20691a16fbb0"
+          },
+          "deliveryInfo": {
+            "description": "Информация о доставке",
+            "type": "object",
+            "properties": {
+              "clientName": {
+                "type": "string",
+                "description": "Имя клиента в сервисе Яндекс Еда",
+                "example": "Иванов Иван Иванович"
+              },
+              "phoneNumber": {
+                "type": "string",
+                "description": "Номер телефона для связи с клиентом в международном формате. Состоит из частей \"+<код страны><номер>\". Может содержать добавочный номер: \"+<код страны><номер> доб. <добавочный номер>\"",
+                "example": "+74732006745 доб. 12099"
+              },
+              "clientArrivementDate": {
+                "type": "string",
+                "description": "Дата, когда придет клиент в магазин, в формате RFC3339 с дробной частью секунд (Y-m-d\\TH:i:s.uP)",
+                "format": "date-time",
+                "example": "1970-01-01T00:00:27.870000+00:20"
+              }
+            },
+            "required": [
+              "clientName",
+              "phoneNumber",
+              "clientArrivementDate"
+            ]
+          },
+          "paymentInfo": {
+            "type": "object",
+            "properties": {
+              "paymentType": {
+                "type": "string",
+                "description": "Информация о типе оплаты",
+                "enum": [
+                  "CARD",
+                  "CASH"
+                ]
+              },
+              "itemsCost": {
+                "type": "number",
+                "format": "double",
+                "example": 1570,
+                "description": "Полная сумма стоимости товаров в заказе"
+              },
+              "total": {
+                "type": "number",
+                "format": "double",
+                "example": 1570,
+                "description": "Общая стоимость заказа"
+              },
+              "change": {
+                "type": "number",
+                "format": "double",
+                "example": 2000,
+                "description": "Сумма, с которой потребуется сдача. Другими словами, это сумма которой клиент планирует расплатиться"
+              }
+            },
+            "required": [
+              "change",
+              "itemsCost",
+              "paymentType"
+            ]
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Внутренний уникальный идентификатор товара в системе партнера",
+                  "example": "some-uniq-identifier"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Наименование товара",
+                  "example": "Молоко Домик в деревне"
+                },
+                "quantity": {
+                  "type": "number",
+                  "format": "float",
+                  "description": "Количество позиции в заказе",
+                  "example": 3
+                },
+                "price": {
+                  "type": "number",
+                  "format": "double",
+                  "description": "Цена одной штуки товара. Для весовых товаров цена передается за 1 кг",
+                  "example": 84
+                },
+                "modifications": {
+                  "type": "array",
+                  "description": "Параметр не поддерживается в интеграции магазинов и передается пустым",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "Внутренний уникальный идентификатор модификатора в системе партнера",
+                        "example": "937c57f6-4508-4858-be7f-20691a16fbb0"
+                      },
+                      "name": {
+                        "type": "string",
+                        "description": "Наименование модификатора",
+                        "example": "Нарезать"
+                      },
+                      "quantity": {
+                        "type": "integer",
+                        "description": "Количество в заказе",
+                        "example": 1
+                      },
+                      "price": {
+                        "type": "number",
+                        "format": "double",
+                        "description": "Цена модификатора",
+                        "example": 39
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "price",
+                      "quantity"
+                    ]
+                  }
+                },
+                "promos": {
+                  "type": "array",
+                  "description": "Параметр не поддерживается в интеграции магазинов и передается пустым",
+                  "items": {
+                    "$ref": "#/components/schemas/PickupOrderV1/properties/promos/items"
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "modifications",
+                "price",
+                "quantity",
+                "promos"
+              ]
+            }
+          },
+          "persons": {
+            "type": "integer",
+            "description": "Параметр не поддерживается в интеграции магазинов и передается пустым",
+            "example": 0
+          },
+          "comment": {
+            "type": "string",
+            "description": "Дополнительная информация о заказе",
+            "example": "Дополнительная информация о заказе: ..."
+          },
+          "promos": {
+            "type": "array",
+            "description": "Параметр не поддерживается в интеграции магазинов и передается пустым",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "description": "Параметр не поддерживается в интеграции магазинов и передается пустым - GIFT - PERCENTAGE - FIXED",
+                  "example": "FIXED"
+                },
+                "discount": {
+                  "type": "number",
+                  "example": 0,
+                  "description": "Сума скидки в валюте"
+                }
+              },
+              "required": [
+                "type",
+                "discount"
+              ]
+            }
+          }
+        },
+        "required": [
+          "discriminator",
+          "comment",
+          "deliveryInfo",
+          "eatsId",
+          "items",
+          "paymentInfo",
+          "promos"
+        ]
+      },
+      "OrderStatus": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "Статус заказа. Должен быть допустимым - т.е. собранный заказ нельзя снова сделать новым. Переход по статусам возможен только в указанном направлении - от NEW до DELIVERED. Исключения: в статус CANCELLED заказ может перейти на любом этапе. Описание статусов: NEW - новый, только отправлен в систему партнера. ACCEPTED_BY_RESTAURANT - заказ подтвержден партнером. COOKING - началась сборка заказа. READY - заказ собран. TAKEN_BY_COURIER - курьер забрал заказ из магазина. DELIVERED - заказ завершен. CANCELLED - заказ отменён. Порядок статусов: NEW -> ACCEPTED_BY_RESTAURANT -> COOKING -> READY -> TAKEN_BY_COURIER -> DELIVERED. Из любого статуса -> CANCELLED",
+            "enum": [
+              "NEW",
+              "ACCEPTED_BY_RESTAURANT",
+              "COOKING",
+              "READY",
+              "TAKEN_BY_COURIER",
+              "DELIVERED",
+              "CANCELLED"
+            ]
+          },
+          "comment": {
+            "maxLength": 500,
+            "type": "string",
+            "description": "Комментарий к смене статуса",
+            "example": null
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Дата, когда сменился статус заказа, в формате RFC3339 с дробной частью секунд (Y-m-d\\\\TH:i:s.uP)",
+            "format": "date-time",
+            "example": "1970-01-01T00:00:27.870000+00:20"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "OrderCancellation": {
+        "type": "object",
+        "properties": {
+          "eatsId": {
+            "type": "string",
+            "description": "Сквозной идентификатор заказа на стороне Яндекс Еды в формате DDDDDD-DDDDDDD",
+            "example": "230130-1234567"
+          },
+          "comment": {
+            "type": "string",
+            "description": "Описание причин отмены (может быть пустым)",
+            "example": "Отказ клиента"
+          }
+        },
+        "required": [
+          "eatsId"
+        ]
+      },
+      "AuthorizationRequiredResponse": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "description": "Причина, по которой не прошла авторизация",
+            "example": "Access token has been expired. You should request a new one"
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "ErrorList": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "integer",
+              "description": "Согласованный с Яндекс.Еда числовой код ошибки",
+              "example": 100
+            },
+            "description": {
+              "type": "string",
+              "description": "Сообщение об ошибке",
+              "example": "Description of error"
+            }
+          }
+        }
+      },
+      "ErrorList_v1": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "integer",
+              "description": "Согласованный с Яндекс Еда числовой код ошибки(400, 401, 403, 404)",
+              "example": 400
+            },
+            "description": {
+              "type": "string",
+              "description": "Сообщение об ошибке",
+              "example": "Description of error"
+            }
+          },
+          "required": [
+            "code",
+            "description"
+          ]
+        }
+      },
+      "Availability": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "description": "Количесто товаров в наличии",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Внутренний уникальный идентификатор товара в системе партнера",
+                  "example": "some-uniq-identifier"
+                },
+                "stock": {
+                  "type": "number",
+                  "format": "float",
+                  "description": "Актуальный остаток товара в магазине. Для штучных товаров передается значение в штуках: 1, 2, 5. Для весовых товаров передается значение в килограммах: 0.8, 3.49, 17.25",
+                  "example": "7.45"
+                }
+              },
+              "required": [
+                "id",
+                "stock"
+              ]
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "Nomenclature": {
+        "type": "object",
+        "description": "Актуальная информация о товарах",
+        "properties": {
+          "categories": {
+            "type": "array",
+            "description": "Категории товаров",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "maxLength": 64,
+                  "type": "string",
+                  "description": "Внутренний уникальный идентификатор категории в системе партнера",
+                  "example": "some-uniq-identifier"
+                },
+                "parentId": {
+                  "maxLength": 64,
+                  "type": "string",
+                  "description": "Внутренний уникальный идентификатор родительской категории в системе партнера для древовидной структуры",
+                  "example": "some-uniq-identifier"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Наименование категории",
+                  "example": "Молоко"
+                },
+                "sortOrder": {
+                  "type": "integer",
+                  "description": "Порядок сортировки от меньшего к большему",
+                  "example": 0
+                },
+                "images": {
+                  "type": "array",
+                  "description": "Изображение категории",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "hash": {
+                        "type": "string",
+                        "description": "SHA1-хэш от содержимого файла изображения. Рассчитывается партнером, служит признаком уникальности. В случае если он меняется, Яндекс Еда перезагружает картинку",
+                        "example": "2fd4e1c6 7a2d28fc ed849ee1 bb76e739 1b93eb12"
+                      },
+                      "url": {
+                        "type": "string",
+                        "description": "Ссылка на изображение для скачивания",
+                        "format": "uri",
+                        "example": "https://ya.ru/images/image_1.jpg"
+                      }
+                    },
+                    "required": [
+                      "url",
+                      "hash"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "name"
+              ]
+            }
+          },
+          "items": {
+            "type": "array",
+            "description": "Список товаров",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "maxLength": 64,
+                  "type": "string",
+                  "description": "Внутренний уникальный идентификатор товара в системе партнера",
+                  "example": "some-uniq-identifier"
+                },
+                "vendorCode": {
+                  "type": "string",
+                  "description": "Артикул товара в системе партнера"
+                },
+                "categoryId": {
+                  "maxLength": 64,
+                  "type": "string",
+                  "description": "Внутренний уникальный идентификатор категории в системе партнера из блока #/categories",
+                  "example": "some-uniq-identifier"
+                },
+                "location": {
+                  "type": "string",
+                  "description": "Расположение товара в маганизе. Можно не передавать.",
+                  "example": "Бакалея. Линия 8"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Наименование товара",
+                  "example": "Молоко Домик в деревне"
+                },
+                "description": {
+                  "type": "object",
+                  "description": "Описание товара",
+                  "properties": {
+                    "general": {
+                      "type": "string",
+                      "description": "Общее описание товара"
+                    },
+                    "composition": {
+                      "type": "string",
+                      "description": "Сведения о составе",
+                      "example": "молоко нормализованное (молоко цельное, молоко обезжиренное)"
+                    },
+                    "nutritionalValue": {
+                      "type": "string",
+                      "description": "Пищевая ценность",
+                      "example": "600 ккал, 8 белки, 3,2 жиры, 40 углеводы"
+                    },
+                    "purpose": {
+                      "type": "string",
+                      "description": "Назначение"
+                    },
+                    "storageRequirements": {
+                      "type": "string",
+                      "description": "Условия хранения",
+                      "example": "от -5 до 5 градусов"
+                    },
+                    "expiresIn": {
+                      "type": "string",
+                      "description": "Срок годности в днях",
+                      "example": 60
+                    },
+                    "vendorCountry": {
+                      "type": "string",
+                      "description": "Страна изготовления",
+                      "example": "Россия"
+                    },
+                    "packageInfo": {
+                      "type": "string",
+                      "description": "Сведения об упаковке",
+                      "example": "Тетрапак"
+                    },
+                    "vendorName": {
+                      "type": "string",
+                      "description": "Производитель",
+                      "example": "ООО Молочный завод"
+                    }
+                  }
+                },
+                "price": {
+                  "type": "number",
+                  "format": "float",
+                  "description": "Цена товара. Товары с нулевой ценой не обрабатываются",
+                  "example": 189
+                },
+                "oldPrice": {
+                  "type": "number",
+                  "format": "float",
+                  "nullable": true,
+                  "description": "Старая цена товара. Используется для отображения скидок на товары. Если не передано - будет использован null в качестве значения",
+                  "example": 239
+                },
+                "vat": {
+                  "type": "integer",
+                  "description": "НДС, включенный в стоимость, в процентах. По-умолчанию, значение соответствует настройке конкретной торговой точки в системе Яндекс Еды",
+                  "example": 20
+                },
+                "barcode": {
+                  "type": "object",
+                  "description": "Штрихкод товара",
+                  "properties": {
+                    "value": {
+                      "type": "string",
+                      "description": "Штрихкод товара",
+                      "example": "987654321098"
+                    },
+                    "values": {
+                      "type": "array",
+                      "description": "Список штрихкодов товара",
+                      "items": {
+                        "type": "string",
+                        "example": [
+                          "987654321098",
+                          "987654321099",
+                          "987654321000"
+                        ]
+                      }
+                    },
+                    "type": {
+                      "type": "string",
+                      "description": "Тип штрихкода",
+                      "enum": [
+                        "auspost",
+                        "ausredirect",
+                        "ausreply",
+                        "ausroute",
+                        "aztec",
+                        "c25iata",
+                        "c25ind",
+                        "c25inter",
+                        "c25logic",
+                        "c25matrix",
+                        "codabar",
+                        "codablockf",
+                        "code11",
+                        "code100",
+                        "code128",
+                        "code128b",
+                        "code16k",
+                        "code39",
+                        "code49",
+                        "code93",
+                        "daft",
+                        "datamatrix",
+                        "dotcode",
+                        "dpident",
+                        "dpleit",
+                        "ean128",
+                        "ean13",
+                        "ean14",
+                        "eanx",
+                        "eanx_chk",
+                        "excode39",
+                        "fim",
+                        "flat",
+                        "hanxin",
+                        "hibc_128",
+                        "hibc_39",
+                        "hibc_aztec",
+                        "hibc_blockf",
+                        "hibc_dm",
+                        "hibc_micpdf",
+                        "hibc_pdf",
+                        "hibc_qr",
+                        "isbnx",
+                        "itf14",
+                        "japanpost",
+                        "kix",
+                        "koreapost",
+                        "logmars",
+                        "mailmark",
+                        "maxicode",
+                        "micropdf417",
+                        "microqr",
+                        "msi_plessey",
+                        "nve18",
+                        "onecode",
+                        "pdf417",
+                        "pdf417trunc",
+                        "pharma",
+                        "pharma_two",
+                        "planet",
+                        "plessey",
+                        "postnet",
+                        "pzn",
+                        "qrcode",
+                        "rm4scc",
+                        "rss14",
+                        "rss14stack",
+                        "rss14stack_omni",
+                        "rss_exp",
+                        "rss_expstack",
+                        "rss_ltd",
+                        "telepen",
+                        "telepen_num",
+                        "upca",
+                        "upca_chk",
+                        "upce",
+                        "upce_chk",
+                        "vin"
+                      ],
+                      "example": "ean13"
+                    },
+                    "weightEncoding": {
+                      "type": "string",
+                      "description": "Алгоритм кодирования веса в штрихкоде",
+                      "enum": [
+                        "none",
+                        "ean13-tail-gram-4",
+                        "ean13-tail-gram-5"
+                      ],
+                      "example": "ean13-tail-gram-4"
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "weightEncoding",
+                    "type"
+                  ]
+                },
+                "measure": {
+                  "type": "object",
+                  "description": "Измерительная характеристика товара, например, вес или объем",
+                  "properties": {
+                    "value": {
+                      "type": "integer",
+                      "description": "Значение измерения. Для весовых товаров передавать 1000. Для штучных товаров актуальный вес товара.",
+                      "example": 1000
+                    },
+                    "quantum": {
+                      "type": "number",
+                      "format": "float",
+                      "description": "Наименьшее количество товара (квант) доступное для заказа. Значение расчитывается от value. Для весовых товаров (isCatchWeight=true) должно быть заполненно. В примере указано как передавать квант равный 300 граммам.",
+                      "example": 0.3
+                    },
+                    "unit": {
+                      "type": "string",
+                      "description": "Единица измерения",
+                      "example": "GRM",
+                      "enum": [
+                        "MLT",
+                        "GRM"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "unit"
+                  ]
+                },
+                "volume": {
+                  "type": "object",
+                  "description": "Объем занимаемый товаром. Полезен для расчета доставки. Может существенно отличатся от номинального объема товара, например, подарочные наборы, крупные упаковки",
+                  "properties": {
+                    "value": {
+                      "type": "integer",
+                      "description": "Значение объема",
+                      "example": 100
+                    },
+                    "unit": {
+                      "type": "string",
+                      "description": "Единица измерения обьема",
+                      "enum": [
+                        "CMQ",
+                        "DMQ"
+                      ],
+                      "example": "DMQ"
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "unit"
+                  ]
+                },
+                "isCatchWeight": {
+                  "type": "boolean",
+                  "description": "Параметр указывающий весовой товар или нет. Для весовых true",
+                  "example": false
+                },
+                "exciseValue": {
+                  "type": "string",
+                  "description": "Тип акциза. Пример, ССН (кириллица - сахаросодержащие напитки)",
+                  "example": "ССН"
+                },
+                "sortOrder": {
+                  "type": "integer",
+                  "description": "Порядок сортировки от меньшего к большему",
+                  "example": 0
+                },
+                "images": {
+                  "type": "array",
+                  "description": "Изображение товара",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "hash": {
+                        "type": "string",
+                        "description": "SHA1-хэш от содержимого файла изображения. Рассчитывается партнером, служит признаком уникальности. В случае если он меняется, Яндекс Еда перезагружает картинку",
+                        "example": "2fd4e1c6 7a2d28fc ed849ee1 bb76e739 1b93eb12"
+                      },
+                      "url": {
+                        "type": "string",
+                        "description": "Ссылка на изображение товара для скачивания",
+                        "format": "uri",
+                        "example": "https://ya.ru/images/image_1.jpg"
+                      },
+                      "order": {
+                        "type": "integer",
+                        "description": "Порядок сортировки от меньшего к большему",
+                        "example": 0
+                      }
+                    },
+                    "required": [
+                      "hash",
+                      "url"
+                    ]
+                  }
+                },
+                "labels": {
+                  "type": "array",
+                  "description": "Список особых признаков товара. Например: Маркированный, Для взрослых, Алкоголь, СТМ, Рецептурный и другие.",
+                  "items": {
+                    "type": "string",
+                    "example": "Marking, Adult, Alcohol, Prescription"
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "vendorCode",
+                "categoryId",
+                "name",
+                "description",
+                "price",
+                "barcode",
+                "measure",
+                "weighable",
+                "isCatchWeight",
+                "images"
+              ]
+            }
+          }
+        },
+        "required": [
+          "categories",
+          "items"
+        ]
+      },
+      "NearestSlots": {
+        "type": "object",
+        "properties": {
+          "delivery_address": {
+            "type": "object",
+            "description": "Информация об адресе доставки",
+            "properties": {
+              "latitude": {
+                "type": "string",
+                "description": "Широта точки доставки",
+                "example": "55.756994"
+              },
+              "longitude": {
+                "type": "string",
+                "description": "Долгота точки доставки",
+                "example": "37.614006"
+              }
+            },
+            "required": [
+              "latitude",
+              "longitude"
+            ]
+          },
+          "places": {
+            "type": "array",
+            "description": "Список внутренних уникальных идентификаторов магазинов в системе партнёра.",
+            "items": {
+              "type": "string",
+              "description": "Внутренний уникальный идентификатор магазина в системе партнёра.",
+              "example": "937c57f6-4508-4858-be7f-20691a16fbb0"
+            }
+          }
+        },
+        "required": [
+          "places"
+        ]
+      },
+      "NearestSlotsResponse": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "placeId": {
+              "type": "string",
+              "description": "Внутренний уникальный идентификатор магазина в системе партнёра."
+            },
+            "nearest_times": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "description": "Идентификатор слота",
+                    "example": 15902
+                  },
+                  "start_time": {
+                    "type": "string",
+                    "description": "Время старта слота, по времени магазина в UTC (nearest time in RFC3339, example: \"2022-05-18T15:35:27.000000+03:00\")",
+                    "example": "2022-05-18T15:35:27.000000+03:00"
+                  },
+                  "end_time": {
+                    "type": "string",
+                    "description": "Время окончания слота, по времени магазина в UTC (nearest time in RFC3339, example: \"2022-05-18T16:05:27.000000+03:00\")",
+                    "example": "2022-05-18T16:05:27.000000+03:00"
+                  }
+                },
+                "required": [
+                  "start_time",
+                  "end_time"
+                ]
+              }
+            }
+          },
+          "required": [
+            "place_id",
+            "nearest_times"
+          ]
+        }
+      },
+      "SlotsCheckout": {
+        "type": "object",
+        "description": "Слоты для использования в Корзине при оформлении заказа",
+        "properties": {
+          "delivery_address": {
+            "type": "object",
+            "description": "Информация об адресе доставки",
+            "properties": {
+              "latitude": {
+                "type": "string",
+                "description": "Широта точки доставки",
+                "example": "55.756994"
+              },
+              "longitude": {
+                "type": "string",
+                "description": "Долгота точки доставки",
+                "example": "37.614006"
+              }
+            },
+            "required": [
+              "latitude",
+              "longitude"
+            ]
+          },
+          "items": {
+            "type": "array",
+            "description": "Список товаров из собранного заказа (в случае, если работа слотов доставки зависит от товаров в заказе)",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Внутренний уникальный идентификатор товара в системе партнёра.",
+                  "example": "some-uniq-identifier"
+                },
+                "quantity": {
+                  "type": "number",
+                  "format": "float",
+                  "description": "Количество позиций товара в заказе",
+                  "example": 4.2
+                }
+              },
+              "required": [
+                "id",
+                "quantity"
+              ]
+            }
+          }
+        },
+        "required": [
+          "delivery_address"
+        ]
+      },
+      "SlotsCheckoutResponse": {
+        "type": "object",
+        "properties": {
+          "delivery_times": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "description": "Идентификатор слота"
+                },
+                "start_time": {
+                  "type": "string",
+                  "description": "Время старта слота, по времени магазина в UTC (nearest time in RFC3339, example: \"2022-05-18T15:35:27.000000+03:00\")"
+                },
+                "end_time": {
+                  "type": "string",
+                  "description": "Время окончания слота, по времени магазина в UTC (nearest time in RFC3339, example: \"2022-05-18T16:05:27.000000+03:00\")"
+                }
+              },
+              "required": [
+                "start_time",
+                "end_time"
+              ]
+            }
+          }
+        },
+        "required": [
+          "delivery_times"
+        ]
+      }
+    },
+    "headers": {
+      "Cache-Control": {
+        "schema": {
+          "type": "string",
+          "example": "private, max-age=0, no-cache, no-store"
+        }
+      },
+      "Expires": {
+        "schema": {
+          "type": "string",
+          "example": "Wed, 21 Oct 2015 07:28:00 GMT"
+        }
+      },
+      "ETag": {
+        "schema": {
+          "type": "string",
+          "example": "random string for every response"
+        }
+      },
+      "Vary": {
+        "schema": {
+          "type": "string",
+          "example": "User-Agent"
+        }
+      },
+      "Pragma": {
+        "schema": {
+          "type": "string",
+          "example": "no-cache"
+        }
+      }
+    }
+  }
+}
